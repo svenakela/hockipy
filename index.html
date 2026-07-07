@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hockipy — Live Event Music Player</title>
+<style>
+/* ── Tokens ──────────────────────────────────────────────── */
+:root {
+  --bg:        #0D1017;
+  --surface:   #12161F;
+  --raised:    #1A1F2E;
+  --border:    #1E2535;
+  --text:      #E0E6F0;
+  --muted:     #8090A8;
+  --subtle:    #3A4860;
+  --accent:    #22D3EE;
+  --accent-hi: #00EAF5;
+  --warm:      #FCD34D;
+  --green:     #4ADE80;
+  --red:       #FF4D4D;
+  --r:         8px;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg:        #F0F5FA;
+    --surface:   #FFFFFF;
+    --raised:    #E5EDF5;
+    --border:    #C0D0E2;
+    --text:      #0D1520;
+    --muted:     #506070;
+    --subtle:    #A8B8C8;
+    --accent:    #0E9CB5;
+    --accent-hi: #007A90;
+    --warm:      #9C6400;
+    --green:     #1A7A40;
+    --red:       #C02020;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:#0D1017;--surface:#12161F;--raised:#1A1F2E;--border:#1E2535;
+  --text:#E0E6F0;--muted:#8090A8;--subtle:#3A4860;
+  --accent:#22D3EE;--accent-hi:#00EAF5;--warm:#FCD34D;--green:#4ADE80;--red:#FF4D4D;
+}
+:root[data-theme="light"] {
+  --bg:#F0F5FA;--surface:#FFFFFF;--raised:#E5EDF5;--border:#C0D0E2;
+  --text:#0D1520;--muted:#506070;--subtle:#A8B8C8;
+  --accent:#0E9CB5;--accent-hi:#007A90;--warm:#9C6400;--green:#1A7A40;--red:#C02020;
+}
+
+/* ── Reset ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hi); text-decoration: underline; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* ── Layout helpers ──────────────────────────────────────── */
+.wrap  { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+.wrap--narrow { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+
+/* ── Nav ─────────────────────────────────────────────────── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-inner {
+  max-width: 1080px; margin: 0 auto; padding: 0 24px;
+  display: flex; align-items: center; gap: 32px; height: 56px;
+}
+.nav-logo {
+  font-weight: 800; font-size: 1.1rem; letter-spacing: -0.02em;
+  color: var(--text); flex-shrink: 0;
+}
+.nav-logo span { color: var(--accent); }
+.nav-links { display: flex; gap: 24px; list-style: none; margin-left: auto; }
+.nav-links a { color: var(--muted); font-size: 0.875rem; font-weight: 500; transition: color .15s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+.nav-cta {
+  margin-left: 8px;
+  background: var(--warm); color: #1A0E00;
+  padding: 6px 16px; border-radius: var(--r);
+  font-size: 0.8rem; font-weight: 700; letter-spacing: 0.02em;
+  white-space: nowrap; transition: opacity .15s;
+}
+.nav-cta:hover { color: #1A0E00; text-decoration: none; opacity: .85; }
+.theme-toggle {
+  background: none; border: 1px solid var(--border); border-radius: var(--r);
+  color: var(--muted); cursor: pointer; padding: 5px 10px; font-size: 0.8rem;
+  transition: border-color .15s, color .15s;
+}
+.theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Hero ────────────────────────────────────────────────── */
+#hero {
+  padding: 72px 24px 48px;
+  max-width: 1080px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1.55fr; gap: 56px; align-items: center;
+}
+.hero-eyebrow {
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 16px;
+}
+.hero-h1 {
+  font-size: clamp(2.8rem, 5vw, 4.2rem);
+  font-weight: 900; line-height: 1.05; letter-spacing: -0.035em;
+  text-wrap: balance; margin-bottom: 20px;
+}
+.hero-h1 em { font-style: normal; color: var(--accent); }
+.hero-sub {
+  font-size: 1.1rem; color: var(--muted); line-height: 1.65;
+  max-width: 400px; margin-bottom: 36px;
+}
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 24px; border-radius: var(--r);
+  font-weight: 700; font-size: 0.9rem; letter-spacing: 0.01em;
+  transition: opacity .15s, transform .1s; cursor: pointer; border: none;
+}
+.btn:hover { opacity: .88; transform: translateY(-1px); text-decoration: none; }
+.btn-primary { background: var(--accent); color: #050D14; }
+.btn-secondary { background: var(--raised); color: var(--text); border: 1px solid var(--border); }
+.hero-screen { position: relative; }
+.app-frame {
+  border-radius: 10px; overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 32px 80px rgba(0,0,0,.5), 0 0 0 1px rgba(34,211,238,.07);
+}
+.app-frame-bar {
+  background: #0A0D14; height: 32px;
+  display: flex; align-items: center; padding: 0 14px; gap: 7px;
+}
+.app-frame-bar span {
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--border); display: block;
+}
+.app-frame img { display: block; width: 100%; }
+
+/* ── Section shell ───────────────────────────────────────── */
+.section { padding: 80px 0; }
+.section + .section { border-top: 1px solid var(--border); }
+.section-eyebrow {
+  font-size: 0.7rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 12px;
+}
+.section-h2 {
+  font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800;
+  letter-spacing: -0.025em; text-wrap: balance; margin-bottom: 16px;
+}
+.section-lead { font-size: 1.05rem; color: var(--muted); max-width: 600px; line-height: 1.65; }
+
+/* ── Feature pills ───────────────────────────────────────── */
+.features-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px; margin-top: 48px;
+}
+.feature-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 24px;
+  transition: border-color .2s;
+}
+.feature-card:hover { border-color: var(--accent); }
+.feature-icon { font-size: 1.5rem; margin-bottom: 12px; }
+.feature-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 6px; }
+.feature-desc { font-size: 0.875rem; color: var(--muted); line-height: 1.55; }
+
+/* ── Screenshots ─────────────────────────────────────────── */
+.screenshot-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 56px;
+  align-items: center; margin-top: 56px;
+}
+.screenshot-row.flip { direction: rtl; }
+.screenshot-row.flip > * { direction: ltr; }
+.screenshot-caption { }
+.screenshot-caption h3 { font-size: 1.25rem; font-weight: 700; margin-bottom: 10px; letter-spacing: -0.015em; }
+.screenshot-caption p { font-size: 0.925rem; color: var(--muted); line-height: 1.65; }
+.screenshot-caption ul { margin-top: 14px; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.screenshot-caption li { font-size: 0.875rem; color: var(--muted); line-height: 1.55; }
+.screenshot-caption li strong { color: var(--text); font-weight: 600; }
+
+/* ── Download ────────────────────────────────────────────── */
+.platform-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 48px;
+}
+.platform-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 32px; display: flex; flex-direction: column; gap: 24px;
+}
+.platform-card:hover { border-color: var(--subtle); }
+.platform-head { display: flex; align-items: center; gap: 14px; }
+.platform-icon { font-size: 2rem; line-height: 1; }
+.platform-name { font-size: 1.15rem; font-weight: 800; }
+.platform-arch { font-size: 0.75rem; color: var(--muted); font-weight: 500; margin-top: 2px; }
+.steps { list-style: none; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+.steps li {
+  display: grid; grid-template-columns: 24px 1fr; gap: 10px;
+  font-size: 0.875rem; color: var(--muted); line-height: 1.55;
+}
+.steps li .n {
+  font-size: 0.7rem; font-weight: 700; color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-radius: 50%; width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  margin-top: 1px;
+}
+.steps code {
+  font-family: ui-monospace, "Cascadia Code", "Fira Code", monospace;
+  font-size: 0.8rem; background: var(--raised); color: var(--accent);
+  padding: 2px 7px; border-radius: 4px; display: inline-block; white-space: nowrap;
+}
+.steps a { color: var(--text); }
+.platform-note {
+  font-size: 0.78rem; color: var(--muted);
+  background: var(--raised); border-radius: 6px; padding: 10px 14px;
+  border-left: 3px solid var(--subtle);
+}
+.platform-note strong { color: var(--text); }
+
+/* ── Help reference ──────────────────────────────────────── */
+.help-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 32px; margin-top: 48px;
+}
+.help-group { }
+.help-group-title {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 14px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.help-items { display: flex; flex-direction: column; gap: 14px; }
+.help-item { }
+.help-item-head { font-size: 0.875rem; font-weight: 600; margin-bottom: 4px; }
+.help-item-body { font-size: 0.825rem; color: var(--muted); line-height: 1.6; }
+.help-item-body code {
+  font-family: ui-monospace, "Cascadia Code", "Fira Code", monospace;
+  font-size: 0.78rem; background: var(--raised); color: var(--accent-hi);
+  padding: 1px 6px; border-radius: 4px;
+}
+
+/* Keyboard shortcut table */
+.kbd-grid {
+  display: grid; grid-template-columns: auto 1fr; gap: 8px 20px;
+  align-items: baseline; margin-top: 6px;
+}
+kbd {
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.73rem; background: var(--raised); color: var(--text);
+  border: 1px solid var(--border); border-bottom-width: 2px;
+  padding: 2px 8px; border-radius: 5px; white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.kbd-desc { font-size: 0.825rem; color: var(--muted); }
+
+/* ── License ─────────────────────────────────────────────── */
+.license-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 36px; margin-top: 36px;
+  display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: start;
+}
+.license-icon { font-size: 2.4rem; line-height: 1; }
+.license-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+.license-body { font-size: 0.9rem; color: var(--muted); line-height: 1.7; }
+.license-body a { color: var(--accent); }
+
+/* ── Coffee / Support ────────────────────────────────────── */
+.coffee-band {
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--warm) 8%, var(--surface)) 0%,
+    var(--surface) 60%);
+  border: 1px solid color-mix(in srgb, var(--warm) 18%, var(--border));
+  border-radius: 12px; padding: 48px 40px;
+  text-align: center; margin-top: 32px;
+}
+.coffee-band h3 { font-size: 1.4rem; font-weight: 800; margin-bottom: 10px; letter-spacing: -0.02em; }
+.coffee-band p { color: var(--muted); max-width: 480px; margin: 0 auto 28px; font-size: 0.95rem; line-height: 1.65; }
+.btn-coffee {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: var(--warm); color: #1A0E00;
+  padding: 14px 32px; border-radius: var(--r);
+  font-weight: 800; font-size: 1rem; letter-spacing: 0.01em;
+  transition: opacity .15s, transform .1s;
+}
+.btn-coffee:hover { text-decoration: none; opacity: .88; transform: translateY(-2px); color: #1A0E00; }
+
+/* ── Footer ──────────────────────────────────────────────── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 24px;
+  text-align: center;
+  font-size: 0.8rem; color: var(--subtle);
+}
+footer a { color: var(--muted); }
+footer a:hover { color: var(--accent); }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  #hero { grid-template-columns: 1fr; gap: 40px; padding-top: 48px; }
+  .hero-sub { max-width: 100%; }
+  .screenshot-row, .screenshot-row.flip { grid-template-columns: 1fr; direction: ltr; }
+  .platform-grid { grid-template-columns: 1fr; }
+  .license-box { grid-template-columns: 1fr; }
+  .nav-links { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Nav ──────────────────────────────────────────────── -->
+<nav>
+  <div class="nav-inner">
+    <span class="nav-logo">Hocki<span>py</span></span>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#screenshots">Screenshots</a></li>
+      <li><a href="#download">Download</a></li>
+      <li><a href="#help">Help</a></li>
+      <li><a href="#license">License</a></li>
+    </ul>
+    <a class="nav-cta" href="https://buymeacoffee.com/svenakela" target="_blank" rel="noopener">☕ Buy me a coffee</a>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">◑</button>
+  </div>
+</nav>
+
+<!-- ── Hero ─────────────────────────────────────────────── -->
+<section id="hero">
+  <div class="hero-text">
+    <p class="hero-eyebrow">Free &amp; Open Source</p>
+    <h1 class="hero-h1">Music that hits on <em>cue.</em></h1>
+    <p class="hero-sub">
+      Hockipy is a live-event music player built for precision. Two independent queues, per-song start times, instant specials — so the right track plays at the right second, every time.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="#download">Download</a>
+      <a class="btn btn-secondary" href="#help">Documentation</a>
+    </div>
+  </div>
+  <div class="hero-screen">
+    <div class="app-frame">
+      <div class="app-frame-bar">
+        <span></span><span></span><span></span>
+      </div>
+      <img src="img/ui_play.png" alt="Hockipy playing a song with playlist, specials, and now-playing display">
+    </div>
+  </div>
+</section>
+
+<!-- ── Features ─────────────────────────────────────────── -->
+<section id="features" class="section">
+  <div class="wrap">
+    <p class="section-eyebrow">What it does</p>
+    <h2 class="section-h2">Everything a live operator needs. Nothing else.</h2>
+    <p class="section-lead">Hockipy is not a general-purpose media player. It solves one job well: running a carefully prepared playlist in front of a crowd, with instant access to specials and millisecond-accurate start points.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📋</div>
+        <div class="feature-title">Dual queue system</div>
+        <div class="feature-desc">A scrollable playlist on the left plays songs in sequence. The specials grid on the right plays anything instantly, on demand, outside the queue.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⏱</div>
+        <div class="feature-title">Per-song start time</div>
+        <div class="feature-desc">Trim the intro off any track. Set a start offset down to the millisecond so the drop, the chorus, or the crowd moment hits exactly when the moment does.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔊</div>
+        <div class="feature-title">Per-song volume</div>
+        <div class="feature-desc">Each track carries its own volume factor (50–125 %). Normalise a quiet recording or tame a loud one without touching your mixer.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Live VU meter</div>
+        <div class="feature-desc">A real-time amplitude bar beneath the now-playing display shows the energy of the current track, with a peak-hold indicator.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🖱</div>
+        <div class="feature-title">Drag to build &amp; reorder</div>
+        <div class="feature-desc">Drop audio files straight onto the window to add them. Drag rows up and down to re-sequence the playlist on the fly.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💾</div>
+        <div class="feature-title">Auto-save playlists</div>
+        <div class="feature-desc">Your playlist, start times, and volume settings are saved automatically. Export to a portable spec file and share it between machines.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎵</div>
+        <div class="feature-title">Common formats</div>
+        <div class="feature-desc">Plays MP3, OGG, WAV, and FLAC. Album art is read from ID3 tags and shown in the now-playing display.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎨</div>
+        <div class="feature-title">Dark-native UI</div>
+        <div class="feature-desc">Designed for dimly lit venues. A dark navy interface with a cyan accent scale keeps every control readable without washing out the room.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Screenshots ───────────────────────────────────────── -->
+<section id="screenshots" class="section">
+  <div class="wrap">
+    <p class="section-eyebrow">How it works</p>
+    <h2 class="section-h2">A quick tour of the interface</h2>
+
+    <!-- Screenshot 1 -->
+    <div class="screenshot-row">
+      <div class="screenshot-caption">
+        <h3>Playlist + Specials</h3>
+        <p>The window is split into two independent panels. The left panel is your main playlist — songs play top-to-bottom, dimming as each one is used. The right panel holds your specials: goal music, jingles, or any track you need to fire instantly without disturbing the queue.</p>
+        <ul>
+          <li><strong>Bright title</strong> — unplayed, queued next</li>
+          <li><strong>Dimmed title</strong> — already played this session</li>
+          <li><strong>Specials grid</strong> — plays immediately on click, never marks as used</li>
+        </ul>
+      </div>
+      <div class="app-frame">
+        <div class="app-frame-bar"><span></span><span></span><span></span></div>
+        <img src="img/ui_play.png" alt="Hockipy with a full playlist and specials grid">
+      </div>
+    </div>
+
+    <!-- Screenshot 2 -->
+    <div class="screenshot-row flip" style="margin-top:64px;">
+      <div class="screenshot-caption">
+        <h3>Empty state &amp; first drop</h3>
+        <p>On first launch both panels show a drop target. Drag any supported audio file from your file manager onto the left panel to start a playlist, or onto the right panel to add a special. The app reads the title, artist, length, and album art from the file's tags automatically.</p>
+        <ul>
+          <li><strong>Left panel</strong> — drop to add to the playlist queue</li>
+          <li><strong>Right panel</strong> — drop to add to specials</li>
+          <li>Also available under <strong>File → Add file to playlist / specials</strong></li>
+        </ul>
+      </div>
+      <div class="app-frame">
+        <div class="app-frame-bar"><span></span><span></span><span></span></div>
+        <img src="img/ui_empty.png" alt="Hockipy empty state with drop targets">
+      </div>
+    </div>
+
+    <!-- Screenshot 3 -->
+    <div class="screenshot-row" style="margin-top:64px;">
+      <div class="screenshot-caption">
+        <h3>Loading a saved playlist</h3>
+        <p>Playlists are saved as portable <code>.hpy</code> spec files. Use <strong>File → Load Spec</strong> to open one. If songs are already loaded you can choose to merge the incoming list with the existing one, or replace it entirely.</p>
+        <ul>
+          <li><strong>Add to existing</strong> — appends to the current session</li>
+          <li><strong>Replace existing</strong> — clears everything and loads fresh</li>
+          <li>Use <strong>File → Save Spec</strong> to export your current setup</li>
+        </ul>
+      </div>
+      <div class="app-frame">
+        <div class="app-frame-bar"><span></span><span></span><span></span></div>
+        <img src="img/ui_addlist.png" alt="Hockipy Load Playlist dialog">
+      </div>
+    </div>
+
+    <!-- Screenshot 4 -->
+    <div class="screenshot-row flip" style="margin-top:64px;">
+      <div class="screenshot-caption">
+        <h3>Song settings</h3>
+        <p>Click the <strong>⚙ cog icon</strong> on the now-playing display to open the song settings. Here you set the exact millisecond the track starts from and adjust its individual volume. A test-play button lets you hear the result before committing.</p>
+        <ul>
+          <li><strong>Slider</strong> — drag or use the keyboard to move the start point</li>
+          <li><strong>Volume −5 % / +5 %</strong> — range 50–125 %</li>
+          <li><strong>Space</strong> — test-play from the current position</li>
+          <li><strong>Enter</strong> — apply and close</li>
+          <li><strong>Scroll wheel over cog</strong> — adjust volume without opening settings</li>
+        </ul>
+      </div>
+      <div class="app-frame">
+        <div class="app-frame-bar"><span></span><span></span><span></span></div>
+        <img src="img/ui_settings.png" alt="Hockipy song settings dialog">
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── Download ──────────────────────────────────────────── -->
+<section id="download" class="section">
+  <div class="wrap">
+    <p class="section-eyebrow">Get Hockipy</p>
+    <h2 class="section-h2">Download, unzip, play.</h2>
+    <p class="section-lead">No installer. No admin rights. Unzip the folder and run the executable — everything is bundled.</p>
+
+    <div class="platform-grid">
+
+      <!-- Linux -->
+      <div class="platform-card">
+        <div class="platform-head">
+          <span class="platform-icon">🐧</span>
+          <div>
+            <div class="platform-name">Linux</div>
+            <div class="platform-arch">x86-64 · tested on Ubuntu 22.04+</div>
+          </div>
+        </div>
+        <ol class="steps">
+          <li><span class="n">1</span><span>Download the archive from the <a href="https://github.com/svenakela/hockipy/releases/latest" target="_blank" rel="noopener">latest release</a> page: <code>hockipy-linux.zip</code></span></li>
+          <li><span class="n">2</span><span>Unzip to a folder of your choice:<br><code>unzip hockipy-linux.zip</code></span></li>
+          <li><span class="n">3</span><span>Make the binary executable if needed:<br><code>chmod +x hockipy-linux/hockipy</code></span></li>
+          <li><span class="n">4</span><span>Run it:<br><code>./hockipy-linux/hockipy</code></span></li>
+        </ol>
+        <div class="platform-note">
+          <strong>Dependency:</strong> the VU meter and OGG cover art require <code>ffmpeg</code>. Install it with your package manager: <code>sudo apt install ffmpeg</code>. All other dependencies are bundled.
+        </div>
+        <a class="btn btn-primary" href="https://github.com/svenakela/hockipy/releases/latest" target="_blank" rel="noopener" style="margin-top:4px;">Download for Linux</a>
+      </div>
+
+      <!-- Windows -->
+      <div class="platform-card">
+        <div class="platform-head">
+          <span class="platform-icon">🪟</span>
+          <div>
+            <div class="platform-name">Windows</div>
+            <div class="platform-arch">x86-64 · Windows 10 / 11</div>
+          </div>
+        </div>
+        <ol class="steps">
+          <li><span class="n">1</span><span>Download the archive from the <a href="https://github.com/svenakela/hockipy/releases/latest" target="_blank" rel="noopener">latest release</a> page: <code>hockipy-windows.zip</code></span></li>
+          <li><span class="n">2</span><span>Right-click the zip → <em>Extract All…</em> and choose a destination folder</span></li>
+          <li><span class="n">3</span><span>Open the extracted folder and double-click <code>hockipy.exe</code></span></li>
+        </ol>
+        <div class="platform-note">
+          <strong>SmartScreen warning?</strong> Windows may show an "unknown publisher" warning the first time. Click <em>More info → Run anyway</em>. <code>ffmpeg.exe</code> is bundled — no extra installs required.
+        </div>
+        <a class="btn btn-primary" href="https://github.com/svenakela/hockipy/releases/latest" target="_blank" rel="noopener" style="margin-top:4px;">Download for Windows</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── Help ──────────────────────────────────────────────── -->
+<section id="help" class="section">
+  <div class="wrap">
+    <p class="section-eyebrow">Help &amp; Reference</p>
+    <h2 class="section-h2">Complete feature documentation</h2>
+
+    <div class="help-grid">
+
+      <!-- Playlist -->
+      <div class="help-group">
+        <div class="help-group-title">Playlist</div>
+        <div class="help-items">
+          <div class="help-item">
+            <div class="help-item-head">Adding songs</div>
+            <div class="help-item-body">Drag audio files from your file manager and drop them onto the left panel. Alternatively use <strong>File → Add file to playlist</strong>. Supported formats: <code>.mp3</code> <code>.ogg</code> <code>.wav</code> <code>.flac</code>.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Playing a song</div>
+            <div class="help-item-body">Click any song in the list. Playback begins immediately from its configured start time. The current song is shown in the now-playing display at the bottom right.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Reordering</div>
+            <div class="help-item-body">Drag any playlist row up or down to change its position. A cyan line shows where it will land. Order is saved automatically.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Played / unplayed state</div>
+            <div class="help-item-body">Songs dim after being played. Use <strong>File → Reset playlist</strong> to mark all playlist songs as unplayed. <strong>Reset all</strong> also resets specials.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Clearing the list</div>
+            <div class="help-item-body"><strong>File → Clear all</strong> removes every song from both the playlist and specials, and stops playback.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Specials -->
+      <div class="help-group">
+        <div class="help-group-title">Specials</div>
+        <div class="help-items">
+          <div class="help-item">
+            <div class="help-item-head">What are specials?</div>
+            <div class="help-item-body">The right-hand grid holds songs that play instantly on click without being part of the main sequence. Use them for goal music, entrance themes, jingles, or any moment-triggered audio.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Adding specials</div>
+            <div class="help-item-body">Drop audio files onto the right panel, or use <strong>File → Add file to specials</strong>. Specials are stored separately from the playlist and never marked as used.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Playing a special</div>
+            <div class="help-item-body">Click any card in the specials grid. Playback starts immediately from the song's configured start time, interrupting whatever is currently playing.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Settings for specials</div>
+            <div class="help-item-body">Specials support the same per-song start time and volume settings as playlist songs. Click the special to play it, then use the cog in the now-playing display to adjust.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Playback controls -->
+      <div class="help-group">
+        <div class="help-group-title">Playback Controls</div>
+        <div class="help-items">
+          <div class="help-item">
+            <div class="help-item-head">Play from 00:00</div>
+            <div class="help-item-body">The leftmost button plays the current track from the very beginning, ignoring any configured start offset.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Play from start time</div>
+            <div class="help-item-body">Plays from the configured start time (the trim point). This is also how songs play when clicked in the list.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Pause / Continue</div>
+            <div class="help-item-body">Pauses with a short fade-out and resumes from the exact position. The button label changes to reflect the current state.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Next</div>
+            <div class="help-item-body">Stops the current track and plays the next unplayed song in the playlist. Songs are played in top-to-bottom order.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Now-playing display -->
+      <div class="help-group">
+        <div class="help-group-title">Now-Playing Display</div>
+        <div class="help-items">
+          <div class="help-item">
+            <div class="help-item-head">Album art</div>
+            <div class="help-item-body">Cover art is read from the audio file's embedded tags each time a song loads. It is never stored in the playlist file.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Time readouts</div>
+            <div class="help-item-body">The right column shows three values: total song length, configured start offset, and current playback position. All in <code>mm:ss.mmm</code> format.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Volume indicator</div>
+            <div class="help-item-body">Shows the current song's volume factor as a percentage. Scroll the mouse wheel over the ⚙ cog icon to adjust it without opening settings.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">VU meter</div>
+            <div class="help-item-body">A bar of 40 segments below the song info shows the amplitude of the playing track. Colour runs from dark navy (quiet) through cyan to a red peak-hold indicator at the loudest point reached.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Progress bar</div>
+            <div class="help-item-body">The thin bar at the very bottom tracks playback position from left (start) to right (end) using the same cyan colour scale as the VU meter.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Song settings dialog -->
+      <div class="help-group">
+        <div class="help-group-title">Song Settings Dialog</div>
+        <div class="help-items">
+          <div class="help-item">
+            <div class="help-item-head">Opening settings</div>
+            <div class="help-item-body">Click the ⚙ cog icon in the now-playing display while a song is active. The song pauses automatically.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Setting a start time</div>
+            <div class="help-item-body">Drag the slider or use the keyboard shortcuts below to position the start point. Press <kbd>Space</kbd> to test-play from the current slider position. Press <kbd>Enter</kbd> or click Apply to save.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Slider keyboard shortcuts</div>
+            <div class="help-item-body">
+              <div class="kbd-grid">
+                <kbd>← / →</kbd><span class="kbd-desc">Move ±1 ms</span>
+                <kbd>Ctrl ← / →</kbd><span class="kbd-desc">Move ±100 ms</span>
+                <kbd>Shift ← / →</kbd><span class="kbd-desc">Move ±1 s</span>
+                <kbd>Space</kbd><span class="kbd-desc">Test-play from current position</span>
+                <kbd>Enter</kbd><span class="kbd-desc">Apply changes and close</span>
+                <kbd>Esc</kbd><span class="kbd-desc">Cancel without saving</span>
+              </div>
+            </div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Slider scroll wheel</div>
+            <div class="help-item-body">Scroll over the slider: plain scroll = ±1 ms per notch, <kbd>Ctrl</kbd>+scroll = ±100 ms per notch, <kbd>Shift</kbd>+scroll = ±1 s per notch.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Per-song volume</div>
+            <div class="help-item-body">Use the <strong>−5 %</strong> and <strong>+5 %</strong> buttons to adjust the volume factor. Range is 50–125 %. Changes take effect immediately during test playback. Default is 100 %.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- File menu -->
+      <div class="help-group">
+        <div class="help-group-title">File Menu</div>
+        <div class="help-items">
+          <div class="help-item">
+            <div class="help-item-head">Load Spec</div>
+            <div class="help-item-body">Opens a <code>.hpy</code> JSON playlist file. You are asked whether to merge with the current session or replace it entirely.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Save Spec</div>
+            <div class="help-item-body">Exports the current playlist, specials, start times, and volume settings to a <code>.hpy</code> file. Album art is not stored in the file — it is re-read from the audio files on load.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Auto-save</div>
+            <div class="help-item-body">Hockipy saves your playlist automatically to <code>~/.hpy</code> (Linux/macOS) or <code>%USERPROFILE%\.hpy</code> (Windows) after every change. This file is loaded on the next launch.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Reset playlist</div>
+            <div class="help-item-body">Marks all songs in the main playlist as unplayed so they brighten back up and are eligible for Next. Specials are unaffected.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Reset all</div>
+            <div class="help-item-body">Resets both the playlist and the specials to unplayed state.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Clear all</div>
+            <div class="help-item-body">Removes every song from the session and stops playback. The auto-save file is updated immediately.</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /help-grid -->
+  </div>
+</section>
+
+<!-- ── License ───────────────────────────────────────────── -->
+<section id="license" class="section">
+  <div class="wrap--narrow">
+    <p class="section-eyebrow">Open Source</p>
+    <h2 class="section-h2">GNU General Public License v3</h2>
+
+    <div class="license-box">
+      <div class="license-icon">⚖️</div>
+      <div>
+        <div class="license-title">Free to use, free to share, free to modify.</div>
+        <div class="license-body">
+          <p>Hockipy is distributed under the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener">GNU General Public License version 3</a>. This means you are free to run, study, modify, and redistribute the software — provided that any distributed version carries the same license and makes the source available.</p>
+          <p style="margin-top:12px;">The GPL-3 license was chosen because Hockipy links PyQt6, which Riverbank Computing distributes under GPL-3-only. Any application that links PyQt6 under the free license must itself be GPL-3 compatible.</p>
+          <p style="margin-top:12px;">Source code is available at <a href="https://github.com/svenakela/hockipy" target="_blank" rel="noopener">github.com/svenakela/hockipy</a>. Issues and pull requests are welcome.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Support ───────────────────────────────────────────── -->
+<section id="support" class="section">
+  <div class="wrap--narrow">
+    <div class="coffee-band">
+      <div style="font-size:2.4rem;margin-bottom:16px;">☕</div>
+      <h3>Hockipy is free. Caffeine isn't.</h3>
+      <p>If Hockipy has saved you from an awkward silence or a missed goal celebration, consider buying the developer a coffee. It takes five seconds and means a lot.</p>
+      <a class="btn-coffee" href="https://buymeacoffee.com/svenakela" target="_blank" rel="noopener">
+        Buy me a coffee
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ────────────────────────────────────────────── -->
+<footer>
+  <div class="wrap">
+    <p>Hockipy · <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener">GPL-3.0</a> · <a href="https://github.com/svenakela/hockipy" target="_blank" rel="noopener">Source on GitHub</a> · <a href="https://buymeacoffee.com/svenakela" target="_blank" rel="noopener">Buy me a coffee ☕</a></p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  const root = document.documentElement;
+  const stored = localStorage.getItem('hockipy-theme');
+  if (stored) root.dataset.theme = stored;
+
+  window.toggleTheme = function () {
+    const current = root.dataset.theme ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const next = current === 'dark' ? 'light' : 'dark';
+    root.dataset.theme = next;
+    localStorage.setItem('hockipy-theme', next);
+  };
+})();
+</script>
+</body>
+</html>
