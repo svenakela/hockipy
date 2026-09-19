@@ -387,12 +387,17 @@ footer a:hover { color: var(--accent); }
       <div class="feature-card">
         <div class="feature-icon">🖱</div>
         <div class="feature-title">Drag to build &amp; reorder</div>
-        <div class="feature-desc">Drop audio files straight onto the window to add them. Drag rows up and down to re-sequence the playlist on the fly.</div>
+        <div class="feature-desc">Drop audio files straight onto the window to add them. Drag playlist rows up and down to re-sequence the queue, or drag two specials onto each other to swap their positions in the grid.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎨</div>
+        <div class="feature-title">Highlight &amp; remove</div>
+        <div class="feature-desc">Right-click any song, in the playlist or specials, to tag it with a highlight color for quick visual recall — or remove it from the session entirely.</div>
       </div>
       <div class="feature-card">
         <div class="feature-icon">💾</div>
-        <div class="feature-title">Auto-save playlists</div>
-        <div class="feature-desc">Your playlist, start times, and volume settings are saved automatically. Export to a portable spec file and share it between machines.</div>
+        <div class="feature-title">Save &amp; auto-save</div>
+        <div class="feature-desc">Your playlist, start times, and volume settings are saved automatically. Use Save to update the current file in place, or Save As to export a portable spec file for another machine.</div>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🎵</div>
@@ -422,7 +427,7 @@ footer a:hover { color: var(--accent); }
         <ul>
           <li><strong>Bright title</strong> — unplayed, queued next</li>
           <li><strong>Dimmed title</strong> — already played this session</li>
-          <li><strong>Specials grid</strong> — works like the playlist but always nearby</li>
+          <li><strong>Specials grid</strong> — plays immediately on click, never marks as used</li>
         </ul>
       </div>
       <div class="app-frame">
@@ -456,7 +461,7 @@ footer a:hover { color: var(--accent); }
         <ul>
           <li><strong>Add to existing</strong> — appends to the current session</li>
           <li><strong>Replace existing</strong> — clears everything and loads fresh</li>
-          <li>Use <strong>File → Save Spec</strong> to export your current setup</li>
+          <li>Use <strong>File → Save As...</strong> to export your current setup, or <strong>Save</strong> to update the file you loaded</li>
         </ul>
       </div>
       <div class="app-frame">
@@ -567,7 +572,11 @@ footer a:hover { color: var(--accent); }
           </div>
           <div class="help-item">
             <div class="help-item-head">Played / unplayed state</div>
-            <div class="help-item-body">Songs dim after being played. Use <strong>File → Reset playlist</strong> to mark all playlist songs as unplayed. <strong>Reset all</strong> also resets specials.</div>
+            <div class="help-item-body">Songs dim after being played. Use <strong>File → Reset play status</strong> to mark every song in both the playlist and specials as unplayed again.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Highlighting &amp; removing</div>
+            <div class="help-item-body">Right-click a playlist row to tag it with a highlight color from the palette (or pick a custom one), clear an existing tag, or remove the song from the playlist entirely.</div>
           </div>
           <div class="help-item">
             <div class="help-item-head">Clearing the list</div>
@@ -591,6 +600,14 @@ footer a:hover { color: var(--accent); }
           <div class="help-item">
             <div class="help-item-head">Playing a special</div>
             <div class="help-item-body">Click any card in the specials grid. Playback starts immediately from the song's configured start time, interrupting whatever is currently playing.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Reordering the grid</div>
+            <div class="help-item-body">Drag a special's handle onto another card to swap their positions in the grid. Unlike the playlist, this is a straight swap rather than an insert.</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Highlighting &amp; removing</div>
+            <div class="help-item-body">Right-click a special for the same highlight-color and remove options available on playlist songs — handy for color-coding goal music or entrance themes at a glance.</div>
           </div>
           <div class="help-item">
             <div class="help-item-head">Settings for specials</div>
@@ -694,20 +711,20 @@ footer a:hover { color: var(--accent); }
             <div class="help-item-body">Opens a <code>.hpy</code> JSON playlist file. You are asked whether to merge with the current session or replace it entirely.</div>
           </div>
           <div class="help-item">
-            <div class="help-item-head">Save Spec</div>
-            <div class="help-item-body">Exports the current playlist, specials, start times, and volume settings to a <code>.hpy</code> file. Album art is not stored in the file — it is re-read from the audio files on load.</div>
+            <div class="help-item-head">Save</div>
+            <div class="help-item-body">Writes the current playlist, specials, start times, and volume settings back to whichever file is currently loaded (or the auto-save file if none has been opened yet).</div>
+          </div>
+          <div class="help-item">
+            <div class="help-item-head">Save As...</div>
+            <div class="help-item-body">Exports the current session to a new <code>.hpy</code> file. Album art is not stored in the file — it is re-read from the audio files on load. Becomes the active file for subsequent Save actions.</div>
           </div>
           <div class="help-item">
             <div class="help-item-head">Auto-save</div>
             <div class="help-item-body">Hockipy saves your playlist automatically to <code>~/.hpy</code> (Linux/macOS) or <code>%USERPROFILE%\.hpy</code> (Windows) after every change. This file is loaded on the next launch.</div>
           </div>
           <div class="help-item">
-            <div class="help-item-head">Reset playlist</div>
-            <div class="help-item-body">Marks all songs in the main playlist as unplayed so they brighten back up and are eligible for Next. Specials are unaffected.</div>
-          </div>
-          <div class="help-item">
-            <div class="help-item-head">Reset all</div>
-            <div class="help-item-body">Resets both the playlist and the specials to unplayed state.</div>
+            <div class="help-item-head">Reset play status</div>
+            <div class="help-item-body">Marks every song in both the playlist and specials as unplayed again, so they brighten back up and are eligible for Next.</div>
           </div>
           <div class="help-item">
             <div class="help-item-head">Clear all</div>
@@ -732,8 +749,8 @@ footer a:hover { color: var(--accent); }
         <div class="license-title">Free to use, free to share, free to modify.</div>
         <div class="license-body">
           <p>Hockipy is distributed under the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener">GNU General Public License version 3</a>. This means you are free to run, study, modify, and redistribute the software — provided that any distributed version carries the same license and makes the source available.</p>
-          <p style="margin-top:12px;">Hockipy links PyQt6, which Riverbank Computing distributes under GPL-3-only. Any application that links PyQt6 under the free license must itself be GPL-3 compatible.</p>
-          <p>On top of that, free software is awesome.</p>
+          <p style="margin-top:12px;">The GPL-3 license was chosen because Hockipy links PyQt6, which Riverbank Computing distributes under GPL-3-only. Any application that links PyQt6 under the free license must itself be GPL-3 compatible.</p>
+          <p style="margin-top:12px;">Source code is available at <a href="https://github.com/svenakela/hockipy" target="_blank" rel="noopener">github.com/svenakela/hockipy</a>. Issues and pull requests are welcome.</p>
         </div>
       </div>
     </div>
